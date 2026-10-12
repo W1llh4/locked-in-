@@ -78,6 +78,7 @@
       tile('Water', `${(water / 1000).toFixed(1)}L`, `of ${(g.water / 1000).toFixed(1)}L`, (water / g.water) * 100, '#nutrition'),
       tile('Study today', Util.fmtMinutes(studyToday), `of ${Util.fmtMinutes(g.studyMinutes)}`, (studyToday / g.studyMinutes) * 100, '#study'),
       tile('Workouts this week', weekWorkouts.length, `of ${g.workoutsPerWeek} planned`, (weekWorkouts.length / g.workoutsPerWeek) * 100, '#gym'),
+      tile('Steps', (S().health[today]?.steps || 0).toLocaleString(), `of ${g.steps.toLocaleString()}`, ((S().health[today]?.steps || 0) / g.steps) * 100, '#gym'),
       tile('Flashcards due', due, due ? 'Review now' : 'All caught up', null, '#study'),
     ].join('');
 
@@ -132,6 +133,8 @@
     $('#set-unit').value = S().unit;
     $('#set-study-goal').value = S().goals.studyMinutes;
     $('#set-workout-goal').value = S().goals.workoutsPerWeek;
+    $('#set-steps-goal').value = S().goals.steps;
+    Cloud.render();
     const counts = `${S().workouts.length} workouts · ${S().foods.length} food entries · ${S().studySessions.length} study sessions · ${S().decks.reduce((n, d) => n + d.cards.length, 0)} flashcards`;
     $('#data-counts').textContent = counts;
   }
@@ -218,20 +221,22 @@
       S().unit = $('#set-unit').value;
       S().goals.studyMinutes = Util.num($('#set-study-goal').value, 120);
       S().goals.workoutsPerWeek = Util.num($('#set-workout-goal').value, 4);
+      S().goals.steps = Util.num($('#set-steps-goal').value, 10000);
       Store.save();
       toast('Settings saved');
     };
     $('#export-btn').onclick = exportData;
     $('#import-file').onchange = (e) => e.target.files[0] && importData(e.target.files[0]);
     $('#reset-btn').onclick = () => {
-      if (confirm('This deletes ALL your data on this device. Export a backup first if you want to keep it. Continue?')) {
+      const where = Cloud.user ? 'on this device AND in your account' : 'on this device';
+      if (confirm(`This deletes ALL your data ${where}. Export a backup first if you want to keep it. Continue?`)) {
         Store.reset();
         toast('All data cleared');
       }
     };
 
     Store.onChange(render);
-    window.addEventListener('hashchange', () => show(currentView()));
+    window.addEventListener('hashchange', () => handleImport() || show(currentView()));
     // Roll the dashboard over at midnight / when returning to the tab
     document.addEventListener('visibilitychange', () => !document.hidden && render());
     let resizeTimer;
@@ -242,7 +247,34 @@
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(render, 150);
     });
+    Cloud.init();
+    handleImport();
     show(currentView());
+  }
+
+  // Health data from an iPhone Shortcut link: #import?steps=8432&date=2026-10-12&sleep=7.5&active=540
+  function handleImport() {
+    if (!location.hash.startsWith('#import')) return false;
+    const q = new URLSearchParams(location.hash.split('?')[1] || '');
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(q.get('date') || '') ? q.get('date') : Util.today();
+    const entry = { ...S().health[date] };
+    const fields = { steps: 'steps', active: 'activeKcal', sleep: 'sleepHours' };
+    let n = 0;
+    Object.entries(fields).forEach(([param, key]) => {
+      const v = parseFloat(q.get(param));
+      if (Number.isFinite(v) && v >= 0) {
+        entry[key] = key === 'steps' ? Math.round(v) : Util.round(v, 1);
+        n++;
+      }
+    });
+    if (n) {
+      S().health[date] = entry;
+      Store.save();
+      toast(entry.steps != null ? `Logged ${entry.steps.toLocaleString()} steps for ${Util.fmtDate(date)}` : 'Health data logged');
+    }
+    history.replaceState(null, '', '#dashboard');
+    show('dashboard');
+    return true;
   }
 
   window.App = { toast };

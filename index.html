@@ -13,6 +13,7 @@
   <div class="layout">
     <nav class="sidebar">
       <div class="brand">🔒 <span>Locked In</span></div>
+      <a href="#settings" class="sync-pill" id="sync-pill">☁️ Not signed in</a>
       <div class="nav">
         <a href="#dashboard"><span class="ico">🏠</span><span class="lbl">Today</span></a>
         <a href="#calendar"><span class="ico">📅</span><span class="lbl">Calendar</span></a>
@@ -35,6 +36,11 @@
           <div class="streak" id="streak"></div>
         </header>
 
+        <div class="banner" id="signin-banner" hidden>
+          <span>☁️ <b>Use Locked In on all your devices.</b> Create a free account to back up and sync your data.</span>
+          <span class="row gap"><a class="btn small primary" href="#settings">Set up account</a>
+          <button class="icon-btn" id="banner-dismiss" title="Hide">✕</button></span>
+        </div>
         <div class="tiles" id="tiles"></div>
 
         <div class="grid two">
@@ -135,6 +141,20 @@
               <div id="bw-chart" class="chart-box"></div>
             </div>
           </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>👟 Steps</h2>
+            <form class="row gap wrap" id="steps-form">
+              <input id="steps-value" type="number" min="0" step="1" placeholder="Steps" style="width:110px">
+              <input id="steps-date" type="date">
+              <button class="btn small" type="submit">Log</button>
+            </form>
+          </div>
+          <p class="small" id="steps-summary"></p>
+          <div id="steps-chart" class="chart-box"></div>
+          <p class="muted small">Connect Apple Health in <a href="#settings" class="link">Settings</a> to fill this in automatically.</p>
         </div>
 
         <div class="card">
@@ -337,12 +357,21 @@
             </label>
             <label>Daily study goal (min)<input id="set-study-goal" type="number" min="0"></label>
             <label>Workouts per week<input id="set-workout-goal" type="number" min="0"></label>
+            <label>Daily steps goal<input id="set-steps-goal" type="number" min="0" step="500"></label>
           </div>
           <button class="btn" type="submit">Save</button>
         </form>
         <div class="card">
+          <h2>Account &amp; sync</h2>
+          <div id="account-box"></div>
+        </div>
+        <div class="card">
+          <h2>🍎 Apple Health (steps)</h2>
+          <div id="health-setup"></div>
+        </div>
+        <div class="card">
           <h2>Your data</h2>
-          <p class="muted">Everything is stored privately in this browser — nothing is sent anywhere. Export a backup regularly, or to move to another device.</p>
+          <p class="muted">Your data is saved in this browser, and in your account when you're signed in. You can also export a backup file at any time.</p>
           <p class="small" id="data-counts"></p>
           <div class="row gap wrap">
             <button class="btn" id="export-btn">⬇ Export backup</button>
@@ -360,12 +389,14 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script src="js/vendor/supabase.js"></script>
   <script src="js/store.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/gym.js"></script>
   <script src="js/nutrition.js"></script>
   <script src="js/study.js"></script>
   <script src="js/calendar.js"></script>
+  <script src="js/cloud.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

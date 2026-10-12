@@ -215,6 +215,27 @@
       : '';
   }
 
+  function renderSteps() {
+    const goal = S().goals.steps;
+    const data = Util.lastNDays(14).map((d) => ({
+      label: Util.fmtDate(d, { day: 'numeric', month: 'short' }),
+      value: (S().health[d] && S().health[d].steps) || 0,
+    }));
+    Charts.bar($('#steps-chart'), data, {
+      goal,
+      goalLabel: `Goal ${goal.toLocaleString()}`,
+      yFmt: (v) => (v >= 1000 ? `${Util.round(v / 1000, 1)}k` : v),
+      tipFmt: (p) => `<b>${p.value.toLocaleString()} steps</b><span>${Util.esc(p.label)}</span>`,
+      ariaLabel: 'Steps over the last 14 days',
+    });
+    const logged = data.filter((d) => d.value > 0);
+    const today = (S().health[Util.today()] || {}).steps;
+    const avg = logged.length ? Math.round(logged.reduce((t, d) => t + d.value, 0) / logged.length) : 0;
+    $('#steps-summary').innerHTML = logged.length
+      ? `Today: <b>${(today || 0).toLocaleString()}</b> · 14-day average ${avg.toLocaleString()} · goal hit on ${logged.filter((d) => d.value >= goal).length} days`
+      : '';
+  }
+
   function render() {
     $('#exercise-list').innerHTML = exerciseNames()
       .concat(['Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Barbell Row', 'Pull Up', 'Lat Pulldown', 'Romanian Deadlift', 'Leg Press', 'Bicep Curl', 'Tricep Pushdown', 'Lateral Raise'])
@@ -226,6 +247,7 @@
     renderPRs();
     renderHistory();
     renderBodyweight();
+    renderSteps();
   }
 
   function init() {
@@ -245,6 +267,17 @@
       Store.save();
       $('#bw-weight').value = '';
       App.toast('Bodyweight logged');
+    };
+    $('#steps-date').value = Util.today();
+    $('#steps-form').onsubmit = (e) => {
+      e.preventDefault();
+      const steps = Math.round(Util.num($('#steps-value').value, -1));
+      const date = $('#steps-date').value || Util.today();
+      if (steps < 0) return;
+      S().health[date] = { ...S().health[date], steps };
+      Store.save();
+      $('#steps-value').value = '';
+      App.toast('Steps logged');
     };
     $('#workout-history').onclick = (e) => {
       const rep = e.target.closest('[data-repeat]');

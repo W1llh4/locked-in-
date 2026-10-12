@@ -43,6 +43,24 @@ No accounts, no installs, no build step. Everything is stored privately in your 
 - kg / lb, study and workout goals, light/dark theme
 - Export / import a JSON backup (use this to move data between devices)
 
+**Accounts & sync**
+- Create an account (email + password) to back up your data and use it on any device
+- Changes sync automatically; works offline and catches up when you're back online
+- Data logged before signing in is merged into your account, nothing is lost
+
+**Steps from Apple Health**
+- Steps chart and goal in Gym, Steps tile on Today, steps in the calendar day view
+- An iPhone Shortcut sends your daily steps automatically (setup guide with copy buttons in Settings)
+- Without an account, a Shortcut can open `…/#import?steps=8432&date=2026-10-12` instead
+
+## Setting up accounts (one-off)
+
+1. In Supabase, open **SQL Editor → New query**, paste everything from [`supabase/schema.sql`](supabase/schema.sql) and press **Run**.
+2. In **Authentication → URL Configuration**, set **Site URL** to your site address (e.g. `https://w1llh4.github.io/locked-in-/`) and add it under **Redirect URLs** too. This is where confirmation and password-reset emails send you.
+3. Optional: for just yourself, you can turn off **Authentication → Sign In / Providers → Email → Confirm email** to skip the confirmation email.
+
+The project URL and publishable key are in `js/cloud.js`. The publishable key is meant to be public: each account can only read and write its own rows (row-level security).
+
 ## Running it
 
 Open `index.html` in a browser. That's it.
@@ -67,5 +85,8 @@ js/gym.js         workouts, PRs, bodyweight
 js/nutrition.js   food log, macros, water
 js/study.js       focus timer, tasks, flashcards
 js/calendar.js    year / month / week / day calendar and events
+js/cloud.js       accounts, sync and Apple Health connection (Supabase)
+js/vendor/        bundled Supabase client library
+supabase/schema.sql  database tables and security rules
 js/app.js         navigation, dashboard, settings
 ```

@@ -268,6 +268,12 @@
                   .join('')
               : '<p class="muted">No workout logged.</p>'
           }
+          ${
+            S().health[key] && S().health[key].steps != null
+              ? `<p>👟 <b>${S().health[key].steps.toLocaleString()}</b> steps <span class="muted small">of ${g.steps.toLocaleString()}</span></p>${meter(S().health[key].steps, g.steps)}`
+              : ''
+          }
+          ${S().health[key] && S().health[key].sleepHours != null ? `<p class="muted small" style="margin-top:6px">😴 ${S().health[key].sleepHours}h sleep</p>` : ''}
         </div>
         <div class="card">
           <h2>🥗 Nutrition</h2>
