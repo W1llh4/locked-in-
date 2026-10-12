@@ -90,13 +90,35 @@
     $('#saved-foods').innerHTML = saved.length
       ? saved
           .map(
-            (f, i) => `<button class="chip" data-quick="${i}" title="P ${f.protein} · C ${f.carbs} · F ${f.fat}">
+            (f, i) => `<button type="button" class="chip" data-quick="${i}" title="P ${f.protein} · C ${f.carbs} · F ${f.fat}">
           ${Util.esc(f.name)} <span class="muted">${Math.round(f.calories)}</span>
           <span class="chip-x" data-unsave="${i}" title="Remove from saved">✕</span></button>`
           )
           .join('')
       : '<span class="muted small">Tick "Save for quick add" when logging a food to keep it here.</span>';
     $('#food-suggestions').innerHTML = saved.map((f) => `<option value="${Util.esc(f.name)}">`).join('');
+    $('#recent-foods').innerHTML =
+      recentFoods()
+        .map(
+          (f, i) => `<button type="button" class="chip" data-recent="${i}" title="P ${f.protein} · C ${f.carbs} · F ${f.fat}">
+          ${Util.esc(f.name)} <span class="muted">${Math.round(f.calories)}</span></button>`
+        )
+        .join('') || '<span class="muted small">Foods you log will show here for one-tap re-adding.</span>';
+  }
+
+  // Last 8 different foods logged, newest first
+  function recentFoods() {
+    const seen = new Set();
+    const out = [];
+    for (let i = S().foods.length - 1; i >= 0 && out.length < 8; i--) {
+      const f = S().foods[i];
+      const key = f.name.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push(f);
+      }
+    }
+    return out;
   }
 
   function render() {
@@ -164,6 +186,13 @@
         addFood({ meal: $('#food-meal').value, name, calories, protein, carbs, fat });
         App.toast(`Added ${name}`);
       }
+    };
+    $('#recent-foods').onclick = (e) => {
+      const r = e.target.closest('[data-recent]');
+      if (!r) return;
+      const { name, calories, protein, carbs, fat } = recentFoods()[Number(r.dataset.recent)];
+      addFood({ meal: $('#food-meal').value, name, calories, protein, carbs, fat });
+      App.toast(`Added ${name}`);
     };
     $('#food-log').onclick = (e) => {
       const del = e.target.closest('[data-del-food]');

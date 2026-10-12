@@ -27,7 +27,12 @@ No accounts, no installs, no build step. Everything is stored privately in your 
 - Bodyweight log with trend chart
 
 **Nutrition**
+- **Search** millions of supermarket products (Open Food Facts) plus ~40 built-in common foods
+- **Scan barcodes** with your phone camera, or type the barcode number
+- Pick a portion in grams or servings and the calories and macros are worked out for you
+- Choose your country in Settings so local products show first
 - Daily food log by meal, with calories / protein / carbs / fat
+- Recent foods for one-tap re-logging
 - Progress bars against your macro goals
 - Save foods for one-tap quick add; servings multiplier
 - Water tracker
@@ -84,7 +89,8 @@ js/nutrition.js   food log, macros, water
 js/study.js       focus timer, tasks, flashcards
 js/calendar.js    year / month / week / day calendar and events
 js/cloud.js       accounts and sync (Supabase)
-js/vendor/        bundled Supabase client library
+js/foodsearch.js  food search, barcode scanner, common foods (Open Food Facts)
+js/vendor/        bundled Supabase and ZXing (barcode) libraries
 supabase/schema.sql  database tables and security rules
 js/app.js         navigation, dashboard, settings
 ```

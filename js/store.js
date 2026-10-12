@@ -5,6 +5,7 @@
   const defaults = () => ({
     goals: { calories: 2500, protein: 160, carbs: 280, fat: 75, water: 3000, studyMinutes: 120, workoutsPerWeek: 4, steps: 10000 },
     unit: 'kg',
+    foodRegion: 'world',
     workouts: [],      // {id, date, name, notes, exercises:[{name, sets:[{reps, weight}]}]}
     bodyweight: [],    // {id, date, weight}
     foods: [],         // {id, date, meal, name, calories, protein, carbs, fat}

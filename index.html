@@ -183,6 +183,16 @@
             <div class="card"><div class="macros" id="macro-summary"></div></div>
             <form class="card" id="food-form">
               <h2>Add food</h2>
+              <div class="food-finder">
+                <div class="row gap">
+                  <input id="food-search" type="search" placeholder="Search foods, e.g. tesco greek yogurt" class="grow" autocomplete="off" enterkeyhint="search">
+                  <button type="button" class="btn" id="food-search-btn" title="Search">🔍</button>
+                  <button type="button" class="btn" id="food-scan-btn" title="Scan a barcode">📷 Scan</button>
+                </div>
+                <div class="food-results" id="food-results" hidden></div>
+                <div class="food-pick" id="food-pick" hidden></div>
+                <p class="muted small finder-credit">Product data from <a class="link" href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a>, or type it in yourself below.</p>
+              </div>
               <div class="row gap wrap">
                 <select id="food-meal">
                   <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snacks</option>
@@ -199,6 +209,8 @@
               </div>
               <label class="check"><input type="checkbox" id="food-save"> Save for quick add</label>
               <button class="btn primary wide" type="submit">Add</button>
+              <h3>Recent</h3>
+              <div class="chips" id="recent-foods"></div>
               <h3>Quick add</h3>
               <div class="chips" id="saved-foods"></div>
             </form>
@@ -357,6 +369,7 @@
             <label>Daily study goal (min)<input id="set-study-goal" type="number" min="0"></label>
             <label>Workouts per week<input id="set-workout-goal" type="number" min="0"></label>
             <label>Daily steps goal<input id="set-steps-goal" type="number" min="0" step="500"></label>
+            <label>Food search country<select id="set-food-region"></select></label>
           </div>
           <button class="btn" type="submit">Save</button>
         </form>
@@ -382,6 +395,24 @@
     </main>
   </div>
 
+  <div class="modal" id="scan-modal" hidden>
+    <div class="modal-card">
+      <div class="row" style="justify-content:space-between">
+        <h2 style="margin:0">Scan barcode</h2>
+        <button class="icon-btn" id="scan-close" title="Close">✕</button>
+      </div>
+      <div class="scan-view">
+        <video id="scan-video" playsinline muted></video>
+        <div class="scan-frame"></div>
+      </div>
+      <p class="small" id="scan-msg"></p>
+      <form class="row gap" id="scan-manual">
+        <input id="scan-code" inputmode="numeric" placeholder="Or type the barcode number" class="grow">
+        <button class="btn" type="submit">Look up</button>
+      </form>
+    </div>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="js/vendor/supabase.js"></script>
@@ -389,6 +420,7 @@
   <script src="js/charts.js"></script>
   <script src="js/gym.js"></script>
   <script src="js/nutrition.js"></script>
+  <script src="js/foodsearch.js"></script>
   <script src="js/study.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/cloud.js"></script>

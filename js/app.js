@@ -134,6 +134,7 @@
     $('#set-study-goal').value = S().goals.studyMinutes;
     $('#set-workout-goal').value = S().goals.workoutsPerWeek;
     $('#set-steps-goal').value = S().goals.steps;
+    FoodSearch.render();
     Cloud.render();
     const counts = `${S().workouts.length} workouts · ${S().foods.length} food entries · ${S().studySessions.length} study sessions · ${S().decks.reduce((n, d) => n + d.cards.length, 0)} flashcards`;
     $('#data-counts').textContent = counts;
@@ -205,6 +206,7 @@
 
     Gym.init();
     Nutrition.init();
+    FoodSearch.init();
     Study.init();
     Calendar.init();
 
@@ -222,6 +224,7 @@
       S().goals.studyMinutes = Util.num($('#set-study-goal').value, 120);
       S().goals.workoutsPerWeek = Util.num($('#set-workout-goal').value, 4);
       S().goals.steps = Util.num($('#set-steps-goal').value, 10000);
+      S().foodRegion = $('#set-food-region').value;
       Store.save();
       toast('Settings saved');
     };
