@@ -153,6 +153,14 @@
   // ---------- Auth ----------
   const redirectUrl = () => location.origin + location.pathname;
 
+  // Turn Supabase auth errors into plain messages
+  function authMessage(err) {
+    const text = (err && err.message) || String(err);
+    if ((err && err.code === 'over_email_send_rate_limit') || /email rate limit/i.test(text)) return 'Too many emails sent recently. Wait an hour.';
+    if (/Invalid login/i.test(text)) return 'Wrong email or password.';
+    return text;
+  }
+
   async function signIn(email, password) {
     const { error } = await client.auth.signInWithPassword({ email, password });
     if (error) throw error;
@@ -244,7 +252,7 @@
           const email = $('#auth-email').value.trim();
           if (!email) return msg('Type your email above first.', true);
           const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl() });
-          msg(error ? error.message : 'Check your email for a link to reset your password.', !!error);
+          msg(error ? authMessage(error) : 'Check your email for a link to reset your password.', !!error);
         };
       $('#auth-form').onsubmit = async (e) => {
         e.preventDefault();
@@ -261,7 +269,7 @@
             await signIn(email, password);
           }
         } catch (err) {
-          msg(/Invalid login/i.test(err.message) ? 'Wrong email or password.' : err.message, true);
+          msg(authMessage(err), true);
         } finally {
           btn.disabled = false;
         }
