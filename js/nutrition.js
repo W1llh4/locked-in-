@@ -199,5 +199,9 @@
     };
   }
 
-  window.Nutrition = { init, render, totals };
+  function setDay(d) {
+    day = d;
+  }
+
+  window.Nutrition = { init, render, totals, setDay };
 })();

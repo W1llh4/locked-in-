@@ -9,7 +9,15 @@ No accounts, no installs, no build step. Everything is stored privately in your 
 **Today (dashboard)**
 - Calories, protein, water, study time and weekly workouts against your goals
 - Activity streak and a 7-day overview of when you trained, logged food and studied
-- Revision tasks due today, and how many flashcards are waiting
+- Revision tasks due today, upcoming calendar events, and how many flashcards are waiting
+
+**Calendar**
+- **Year** view: every day shaded by how much you did (gym, food, study), with yearly totals
+- **Month** view: your events plus icons for workouts, food and study on each day
+- **Week** view: day-by-day columns with events, workouts, calories, study and tasks, plus weekly totals
+- **Day** view: full breakdown of a single day, and where you add events
+- Events for exams, deadlines, planned sessions etc., with time, category, notes and optional weekly repeat
+- Upcoming events show on the Today page
 
 **Gym**
 - Log workouts with exercises and sets (weight × reps), with exercise autocomplete
@@ -58,5 +66,6 @@ js/charts.js      small SVG chart library
 js/gym.js         workouts, PRs, bodyweight
 js/nutrition.js   food log, macros, water
 js/study.js       focus timer, tasks, flashcards
+js/calendar.js    year / month / week / day calendar and events
 js/app.js         navigation, dashboard, settings
 ```

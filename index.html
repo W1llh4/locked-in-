@@ -15,6 +15,7 @@
       <div class="brand">🔒 <span>Locked In</span></div>
       <div class="nav">
         <a href="#dashboard"><span class="ico">🏠</span><span class="lbl">Today</span></a>
+        <a href="#calendar"><span class="ico">📅</span><span class="lbl">Calendar</span></a>
         <a href="#gym"><span class="ico">🏋️</span><span class="lbl">Gym</span></a>
         <a href="#nutrition"><span class="ico">🥗</span><span class="lbl">Nutrition</span></a>
         <a href="#study"><span class="ico">📚</span><span class="lbl">Study</span><span class="badge" id="nav-due" hidden></span></a>
@@ -46,6 +47,11 @@
             <ul class="plain-list" id="dash-tasks"></ul>
           </div>
           <div class="card">
+            <h2>Coming up</h2>
+            <ul class="plain-list" id="dash-upcoming"></ul>
+            <a class="btn small" href="#calendar" style="margin-top:12px">Open calendar</a>
+          </div>
+          <div class="card">
             <h2>Last workout</h2>
             <div id="dash-last-workout"></div>
             <a class="btn small" href="#gym" style="margin-top:12px">Log a workout</a>
@@ -60,6 +66,28 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- ================= CALENDAR ================= -->
+      <section class="view" id="view-calendar" hidden>
+        <header class="page-head">
+          <div><h1>Calendar</h1><p class="muted" id="cal-title"></p></div>
+          <button class="btn primary" id="cal-add">+ Event</button>
+        </header>
+        <div class="cal-toolbar">
+          <div class="seg">
+            <button data-cal-view="year">Year</button>
+            <button data-cal-view="month">Month</button>
+            <button data-cal-view="week">Week</button>
+            <button data-cal-view="day">Day</button>
+          </div>
+          <div class="row gap">
+            <button class="icon-btn" id="cal-prev" title="Previous">‹</button>
+            <button class="btn small ghost" id="cal-today">Today</button>
+            <button class="icon-btn" id="cal-next" title="Next">›</button>
+          </div>
+        </div>
+        <div id="cal-body"></div>
       </section>
 
       <!-- ================= GYM ================= -->
@@ -337,6 +365,7 @@
   <script src="js/gym.js"></script>
   <script src="js/nutrition.js"></script>
   <script src="js/study.js"></script>
+  <script src="js/calendar.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

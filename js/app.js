@@ -2,7 +2,7 @@
 (function () {
   const S = () => Store.state;
   const $ = (sel) => document.querySelector(sel);
-  const VIEWS = ['dashboard', 'gym', 'nutrition', 'study', 'settings'];
+  const VIEWS = ['dashboard', 'calendar', 'gym', 'nutrition', 'study', 'settings'];
 
   function currentView() {
     const v = location.hash.replace('#', '');
@@ -18,6 +18,7 @@
   function render() {
     const view = currentView();
     if (view === 'dashboard') renderDashboard();
+    if (view === 'calendar') Calendar.render();
     if (view === 'gym') Gym.render();
     if (view === 'nutrition') Nutrition.render();
     if (view === 'study') Study.render();
@@ -106,6 +107,19 @@
           .join('')
       : '<li class="muted">Nothing due today. Add revision tasks in Study.</li>';
 
+    const soon = Calendar.upcoming(14);
+    $('#dash-upcoming').innerHTML = soon.length
+      ? soon
+          .slice(0, 6)
+          .map((e) => {
+            const days = Math.round((Util.parseDate(e.on) - Util.parseDate(today)) / 86400000);
+            const when = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`;
+            return `<li><span><span class="tag ${Calendar.catClass(e.category)}">${Util.esc(e.category)}</span> ${Util.esc(e.title)}</span>
+              <span class="small muted">${when}${e.time ? ` · ${e.time}` : ''}</span></li>`;
+          })
+          .join('')
+      : '<li class="muted">Nothing in the next 2 weeks. Add exams and plans in the Calendar.</li>';
+
     const last = S().workouts[S().workouts.length - 1];
     $('#dash-last-workout').innerHTML = last
       ? `<b>${Util.esc(last.name)}</b> <span class="muted">· ${Util.fmtDate(last.date)}</span>
@@ -189,6 +203,7 @@
     Gym.init();
     Nutrition.init();
     Study.init();
+    Calendar.init();
 
     $('#dash-tasks').onclick = (e) => {
       const cb = e.target.closest('[data-dash-task]');

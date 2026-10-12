@@ -14,6 +14,7 @@
     studySessions: [], // {id, date, subject, minutes, note}
     decks: [],         // {id, name, cards:[{id, front, back, due, interval, ease, reps}]}
     tasks: [],         // {id, text, subject, due, done}
+    events: [],        // {id, date, time, title, category, repeat:'none'|'weekly', notes}
   });
 
   function load() {
