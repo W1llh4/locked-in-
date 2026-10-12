@@ -14,7 +14,6 @@
   let pushing = null;
   let pulling = null;
   let editVersion = 0;
-  let healthToken = null;
   let authMode = 'signin';
 
   // Sync bookkeeping, per device
@@ -59,35 +58,6 @@
     if (meta.dirty) schedulePush();
   }
 
-  async function pullHealth() {
-    const since = Util.addDays(Util.today(), -400);
-    const { data, error } = await client
-      .from('health_days')
-      .select('day, steps, active_kcal, sleep_hours')
-      .eq('user_id', user.id)
-      .gte('day', since);
-    if (error) throw error;
-    let changed = false;
-    const health = Store.state.health;
-    data.forEach((r) => {
-      const next = { ...health[r.day] };
-      if (r.steps != null) next.steps = r.steps;
-      if (r.active_kcal != null) next.activeKcal = Number(r.active_kcal);
-      if (r.sleep_hours != null) next.sleepHours = Number(r.sleep_hours);
-      if (JSON.stringify(next) !== JSON.stringify(health[r.day] || {})) {
-        health[r.day] = next;
-        changed = true;
-      }
-    });
-    if (changed) {
-      Store.save({ fromCloud: true });
-      editVersion++;
-      meta.dirty = true; // include in the main copy so other devices see it offline too
-      saveMeta();
-      schedulePush();
-    }
-  }
-
   // Bring this device up to date with the account, merging if both sides changed.
   async function pull() {
     if (!client || !user) return;
@@ -127,7 +97,6 @@
         } else if (meta.dirty) {
           await upload();
         }
-        await pullHealth().catch((e) => console.warn('Health sync skipped', e));
         setStatus(meta.dirty ? 'syncing' : 'synced');
       } catch (e) {
         console.warn('Sync failed', e);
@@ -202,24 +171,8 @@
     // Your data is safe in your account; remove it from this device.
     meta = { userId: null, remoteAt: null, dirty: false };
     saveMeta();
-    healthToken = null;
     Store.reset({ fromCloud: true });
     App.toast('Signed out');
-  }
-
-  async function getHealthToken(regenerate = false) {
-    if (regenerate) {
-      const token = [...crypto.getRandomValues(new Uint8Array(32))].map((b) => b.toString(16).padStart(2, '0')).join('');
-      const { data, error } = await client.from('health_tokens').upsert({ user_id: user.id, token }).select('token').single();
-      if (error) throw error;
-      return data.token;
-    }
-    const { data, error } = await client.from('health_tokens').select('token').eq('user_id', user.id).maybeSingle();
-    if (error) throw error;
-    if (data) return data.token;
-    const created = await client.from('health_tokens').insert({ user_id: user.id }).select('token').single();
-    if (created.error) throw created.error;
-    return created.data.token;
   }
 
   // ---------- UI ----------
@@ -327,69 +280,8 @@
     renderStatus();
   }
 
-  async function renderHealthSetup() {
-    const box = $('#health-setup');
-    if (!box) return;
-    if (!user) {
-      box.innerHTML = `<p class="muted">Sign in above to send steps from Apple Health automatically, in the background.</p>
-        <p class="muted small">Without an account, a Shortcut can still open this link to log steps on this device:<br>
-        <code>${Util.esc(redirectUrl())}#import?steps=STEPS&amp;date=YYYY-MM-DD</code></p>`;
-      return;
-    }
-    box.innerHTML = '<p class="muted">Loading…</p>';
-    try {
-      healthToken = healthToken || (await getHealthToken());
-    } catch (e) {
-      box.innerHTML = `<p class="bad small">${Util.esc(friendlyError(e))}</p>`;
-      return;
-    }
-    const body = `{"p_token": "${healthToken}", "p_date": "<Formatted Date>", "p_steps": <Steps>}`;
-    const field = (label, value, id) => `<div class="copy-field"><span class="muted small">${label}</span>
-      <div class="row gap"><input readonly value="${Util.esc(value)}" id="${id}"><button class="btn small" data-copy="${id}">Copy</button></div></div>`;
-    box.innerHTML = `
-      <ol class="steps-guide">
-        <li>On your iPhone open <b>Shortcuts</b> → <b>Automation</b> → <b>+</b> → <b>Time of Day</b>. Pick a time you're usually on your phone, e.g. 21:00 (iPhone can't read Health while locked), set <b>Daily</b>, then choose <b>Run Immediately</b>. You can add more automations at other times; each run updates today's total.</li>
-        <li>Add the action <b>Find Health Samples</b>: type <i>Steps</i>, filter <i>Start Date is today</i>.</li>
-        <li>Add <b>Calculate Statistics</b> → <i>Sum</i> of the Health Samples. Rename the result to <i>Steps</i>.</li>
-        <li>Add <b>Format Date</b> → <i>Current Date</i>, Date Format <i>Custom</i>: <code>yyyy-MM-dd</code>.</li>
-        <li>Add <b>Get Contents of URL</b> with the URL below. Tap <i>Show More</i>: Method <b>POST</b>, add the two <b>Headers</b> below, Request Body <b>JSON</b> with fields
-          <code>p_token</code> (Text, your token), <code>p_date</code> (Text, the Formatted Date) and <code>p_steps</code> (Number, Steps).</li>
-        <li>Run it once by hand. iPhone will ask permission to read Steps; allow it. Then tap <b>Sync now</b> above.</li>
-      </ol>
-      ${field('URL', `${SUPABASE_URL}/rest/v1/rpc/log_health`, 'hs-url')}
-      ${field('Header: apikey', SUPABASE_KEY, 'hs-key')}
-      ${field('Header: Content-Type', 'application/json', 'hs-ct')}
-      ${field('Your secret token (p_token)', healthToken, 'hs-token')}
-      <p class="muted small">The JSON body ends up like: <code>${Util.esc(body)}</code></p>
-      <p class="muted small">Want more? Add <code>p_active_kcal</code> (Active Energy) and <code>p_sleep_hours</code> the same way.
-      Keep your token private. If it leaks, <button class="link-btn" id="hs-regen">make a new one</button> and update your Shortcut.</p>`;
-    box.querySelectorAll('[data-copy]').forEach(
-      (b) =>
-        (b.onclick = async () => {
-          const input = document.getElementById(b.dataset.copy);
-          try {
-            await navigator.clipboard.writeText(input.value);
-          } catch (e) {
-            input.select();
-            document.execCommand('copy');
-          }
-          App.toast('Copied');
-        })
-    );
-    $('#hs-regen').onclick = async () => {
-      if (!confirm('Make a new token? Your current Shortcut will stop working until you paste the new one in.')) return;
-      try {
-        healthToken = await getHealthToken(true);
-        renderHealthSetup();
-      } catch (e) {
-        App.toast(friendlyError(e));
-      }
-    };
-  }
-
   function render() {
     renderAccount();
-    renderHealthSetup();
     renderStatus();
   }
 

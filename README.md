@@ -48,10 +48,8 @@ No accounts, no installs, no build step. Everything is stored privately in your 
 - Changes sync automatically; works offline and catches up when you're back online
 - Data logged before signing in is merged into your account, nothing is lost
 
-**Steps from Apple Health**
-- Steps chart and goal in Gym, Steps tile on Today, steps in the calendar day view
-- An iPhone Shortcut sends your daily steps automatically (setup guide with copy buttons in Settings)
-- Without an account, a Shortcut can open `…/#import?steps=8432&date=2026-10-12` instead
+**Steps**
+- Log daily steps in Gym, with a 14-day chart and goal; Steps tile on Today; steps in the calendar day view
 
 ## Setting up accounts (one-off)
 
@@ -85,7 +83,7 @@ js/gym.js         workouts, PRs, bodyweight
 js/nutrition.js   food log, macros, water
 js/study.js       focus timer, tasks, flashcards
 js/calendar.js    year / month / week / day calendar and events
-js/cloud.js       accounts, sync and Apple Health connection (Supabase)
+js/cloud.js       accounts and sync (Supabase)
 js/vendor/        bundled Supabase client library
 supabase/schema.sql  database tables and security rules
 js/app.js         navigation, dashboard, settings

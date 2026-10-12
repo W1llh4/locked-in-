@@ -236,7 +236,7 @@
     };
 
     Store.onChange(render);
-    window.addEventListener('hashchange', () => handleImport() || show(currentView()));
+    window.addEventListener('hashchange', () => show(currentView()));
     // Roll the dashboard over at midnight / when returning to the tab
     document.addEventListener('visibilitychange', () => !document.hidden && render());
     let resizeTimer;
@@ -248,34 +248,9 @@
       resizeTimer = setTimeout(render, 150);
     });
     Cloud.init();
-    handleImport();
     show(currentView());
   }
 
-  // Health data from an iPhone Shortcut link: #import?steps=8432&date=2026-10-12&sleep=7.5&active=540
-  function handleImport() {
-    if (!location.hash.startsWith('#import')) return false;
-    const q = new URLSearchParams(location.hash.split('?')[1] || '');
-    const date = /^\d{4}-\d{2}-\d{2}$/.test(q.get('date') || '') ? q.get('date') : Util.today();
-    const entry = { ...S().health[date] };
-    const fields = { steps: 'steps', active: 'activeKcal', sleep: 'sleepHours' };
-    let n = 0;
-    Object.entries(fields).forEach(([param, key]) => {
-      const v = parseFloat(q.get(param));
-      if (Number.isFinite(v) && v >= 0) {
-        entry[key] = key === 'steps' ? Math.round(v) : Util.round(v, 1);
-        n++;
-      }
-    });
-    if (n) {
-      S().health[date] = entry;
-      Store.save();
-      toast(entry.steps != null ? `Logged ${entry.steps.toLocaleString()} steps for ${Util.fmtDate(date)}` : 'Health data logged');
-    }
-    history.replaceState(null, '', '#dashboard');
-    show('dashboard');
-    return true;
-  }
 
   window.App = { toast };
   document.addEventListener('DOMContentLoaded', init);
