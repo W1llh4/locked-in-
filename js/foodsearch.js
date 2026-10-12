@@ -254,16 +254,48 @@
     }
   }
 
-  async function openScanner() {
-    const modal = $('#scan-modal');
+  let hintTimer = null;
+  let lookingUp = false;
+
+  function scanMsg(text) {
+    $('#scan-msg').textContent = text;
+  }
+
+  // Show the "type the barcode" section. focus=true also opens the keyboard.
+  function showManual(focus = true) {
+    $('#scan-manual').hidden = false;
+    $('#scan-manual-toggle').hidden = true;
+    $('#manual-entry').classList.add('open');
+    if (focus) $('#scan-code').focus();
+  }
+
+  function stopCamera() {
+    clearTimeout(hintTimer);
+    if (scanner) scanner.stop();
+    scanner = null;
     const video = $('#scan-video');
-    const msg = $('#scan-msg');
-    modal.hidden = false;
-    msg.textContent = 'Starting camera…';
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach((t) => t.stop());
+      video.srcObject = null;
+    }
+  }
+
+  async function openScanner() {
+    const video = $('#scan-video');
+    $('#scan-modal').hidden = false;
+    $('#scan-result').hidden = true;
+    $('#scan-view').hidden = false;
     $('#scan-code').value = '';
+    $('#scan-code-msg').textContent = '';
+    $('#scan-manual').hidden = true;
+    $('#scan-manual-toggle').hidden = false;
+    $('#manual-entry').classList.remove('open');
+    lookingUp = false;
+    scanMsg('Starting camera…');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      msg.textContent = location.protocol === 'file:' ? 'The camera only works on the online version of the site. Type the barcode below instead.' : 'Camera not available in this browser. Type the barcode below instead.';
-      return;
+      scanMsg(location.protocol === 'file:' ? 'The camera only works on the online version of the site. Type the barcode below.' : "This browser can't use the camera. Type the barcode below.");
+      $('#scan-view').hidden = true;
+      return showManual();
     }
     const constraints = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
     try {
@@ -279,7 +311,6 @@
             stream.getTracks().forEach((t) => t.stop());
           },
         };
-        msg.textContent = 'Point the camera at the barcode';
         const loop = async () => {
           if (!running) return;
           try {
@@ -298,48 +329,87 @@
         hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E]);
         const reader = new window.ZXing.BrowserMultiFormatReader(hints, 200);
         scanner = { stop: () => reader.reset() };
-        msg.textContent = 'Point the camera at the barcode';
         await reader.decodeFromConstraints(constraints, video, (result) => {
           if (result) found(result.getText());
         });
       }
+      scanMsg('Point the camera at the barcode, holding it steady inside the box.');
+      // Still nothing after a while? Offer typing it in.
+      hintTimer = setTimeout(() => {
+        if (lookingUp || $('#scan-modal').hidden) return;
+        scanMsg("Having trouble? Try more light or move a little further away, or type the number below.");
+        showManual(false);
+      }, 8000);
     } catch (e) {
       console.warn('Scanner error', e);
-      msg.textContent =
+      stopCamera();
+      $('#scan-view').hidden = true;
+      scanMsg(
         e && e.name === 'NotAllowedError'
-          ? 'Camera permission was blocked. Allow camera access for this site in your browser settings, or type the barcode below.'
-          : 'Could not start the camera. Type the barcode below instead.';
+          ? 'Camera access was blocked. You can allow it in your browser settings, or type the barcode below.'
+          : "Couldn't start the camera. Type the barcode below."
+      );
+      showManual();
     }
   }
 
   function closeScanner() {
-    if (scanner) scanner.stop();
-    scanner = null;
-    const video = $('#scan-video');
-    if (video.srcObject) {
-      video.srcObject.getTracks().forEach((t) => t.stop());
-      video.srcObject = null;
-    }
+    stopCamera();
+    lookingUp = false;
     $('#scan-modal').hidden = true;
   }
 
+  // Check a typed barcode: right length and a valid check digit (EAN/UPC/GTIN).
+  function barcodeProblem(code) {
+    if (!code) return 'Type the numbers under the barcode.';
+    if (![8, 12, 13, 14].includes(code.length)) return `That's ${code.length} digits. Barcodes usually have 8, 12 or 13. Check you've typed them all.`;
+    const digits = code.split('').map(Number);
+    const check = digits.pop();
+    const sum = digits.reverse().reduce((t, d, i) => t + d * (i % 2 === 0 ? 3 : 1), 0);
+    if ((10 - (sum % 10)) % 10 !== check) return "That number doesn't look right. A digit may be mistyped, so please check it.";
+    return null;
+  }
+
+  function showResult(html, buttons) {
+    const box = $('#scan-result');
+    box.hidden = false;
+    box.innerHTML = `<p>${html}</p><div class="row gap wrap">${buttons
+      .map((b, i) => `<button type="button" class="btn small ${i === 0 ? 'primary' : ''}" data-act="${b[0]}">${b[1]}</button>`)
+      .join('')}</div>`;
+  }
+
   async function found(code) {
-    closeScanner();
+    if (lookingUp) return;
+    lookingUp = true;
+    stopCamera();
     if (navigator.vibrate) navigator.vibrate(60);
-    App.toast(`Looking up ${code}…`);
+    $('#scan-result').hidden = true;
+    scanMsg(`Looking up ${code}…`);
     try {
       const product = await lookupBarcode(code);
       if (product) {
+        closeScanner();
         pick(product);
         App.toast(`Found: ${product.name}`);
-      } else {
-        App.toast("That product isn't in the database yet. Enter it manually.");
-        $('#food-name').focus();
+        return;
       }
+      scanMsg('');
+      showResult(`<b>${Util.esc(code)}</b> isn't in the food database yet.`, [
+        ['manual-food', 'Add it manually'],
+        ['retype', 'Type a different number'],
+        ['rescan', 'Scan again'],
+      ]);
     } catch (e) {
       console.warn('Barcode lookup failed', e);
-      App.toast('Could not reach the food database. Check your connection.');
+      scanMsg('');
+      showResult("Couldn't reach the food database. Check your internet connection.", [
+        ['retry:' + code, 'Try again'],
+        ['manual-food', 'Add it manually'],
+      ]);
     }
+    lookingUp = false;
+    $('#scan-view').hidden = true;
+    showManual(false);
   }
 
   // ---------- Init ----------
@@ -363,10 +433,30 @@
     $('#scan-close').onclick = closeScanner;
     $('#scan-modal').addEventListener('click', (e) => e.target.id === 'scan-modal' && closeScanner());
     document.addEventListener('keydown', (e) => e.key === 'Escape' && !$('#scan-modal').hidden && closeScanner());
+    $('#scan-manual-toggle').onclick = () => showManual(true);
+    $('#scan-code').addEventListener('input', () => ($('#scan-code-msg').textContent = ''));
     $('#scan-manual').onsubmit = (e) => {
       e.preventDefault();
       const code = $('#scan-code').value.replace(/\D/g, '');
-      if (code.length >= 8) found(code);
+      const problem = barcodeProblem(code);
+      const msg = $('#scan-code-msg');
+      msg.textContent = problem || '';
+      msg.classList.toggle('bad', !!problem);
+      if (!problem) found(code);
+    };
+    $('#scan-result').onclick = (e) => {
+      const act = e.target.closest('[data-act]');
+      if (!act) return;
+      const a = act.dataset.act;
+      if (a === 'manual-food') {
+        closeScanner();
+        $('#food-name').focus();
+      } else if (a === 'retype') {
+        $('#scan-result').hidden = true;
+        $('#scan-code').value = '';
+        showManual(true);
+      } else if (a === 'rescan') openScanner();
+      else if (a.startsWith('retry:')) found(a.slice(6));
     };
     $('#food-results').onclick = (e) => {
       const b = e.target.closest('[data-pick]');
@@ -380,5 +470,5 @@
     render();
   }
 
-  window.FoodSearch = { init, render, normalise, searchCommon };
+  window.FoodSearch = { init, render, normalise, searchCommon, barcodeProblem };
 })();

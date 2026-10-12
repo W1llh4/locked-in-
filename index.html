@@ -401,15 +401,23 @@
         <h2 style="margin:0">Scan barcode</h2>
         <button class="icon-btn" id="scan-close" title="Close">✕</button>
       </div>
-      <div class="scan-view">
+      <div class="scan-view" id="scan-view">
         <video id="scan-video" playsinline muted></video>
         <div class="scan-frame"></div>
       </div>
-      <p class="small" id="scan-msg"></p>
-      <form class="row gap" id="scan-manual">
-        <input id="scan-code" inputmode="numeric" placeholder="Or type the barcode number" class="grow">
-        <button class="btn" type="submit">Look up</button>
-      </form>
+      <p class="small" id="scan-msg" role="status"></p>
+      <div class="scan-result" id="scan-result" hidden></div>
+      <div class="manual-entry" id="manual-entry">
+        <button type="button" class="manual-toggle" id="scan-manual-toggle">⌨️ Can't scan it? <b>Type the barcode instead</b></button>
+        <form id="scan-manual" hidden>
+          <label for="scan-code">Barcode number <span class="muted">(the digits printed under the bars)</span></label>
+          <div class="row gap">
+            <input id="scan-code" inputmode="numeric" autocomplete="off" maxlength="20" placeholder="e.g. 5012345678900" class="grow">
+            <button class="btn primary" type="submit">Look up</button>
+          </div>
+          <div class="small" id="scan-code-msg"></div>
+        </form>
+      </div>
     </div>
   </div>
 
